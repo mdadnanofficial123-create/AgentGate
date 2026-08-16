@@ -8,7 +8,7 @@ inputs:
     required: false
     default: 'eval.yaml'
   xai-api-key:
-    description: 'xAI API Key'
+    description: 'xAI / Grok API Key for LLM Judge'
     required: false
   github-token:
     description: 'GitHub Token'
@@ -23,5 +23,7 @@ runs:
       env:
         INPUT_CONFIG_PATH: ${{ inputs.config-path }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        # Pass the key into both variable names so whichever your evaluator checks, it finds it:
         XAI_API_KEY: ${{ inputs.xai-api-key }}
+        GROQ_API_KEY: ${{ inputs.xai-api-key }}
       run: npx tsx src/index.ts run -c "${{ inputs.config-path }}"
