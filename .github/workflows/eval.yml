@@ -1,8 +1,11 @@
 name: AgentGate AI Guardrail
 
 on:
+  push:
+    branches: [ main ]  # Runs on direct pushes to main
   pull_request:
-    branches: [ main ]
+    branches: [ main ]  # Runs when a PR is opened/updated against main
+  workflow_dispatch:    # Allows manual trigger via GitHub UI
 
 jobs:
   agentgate-eval:
