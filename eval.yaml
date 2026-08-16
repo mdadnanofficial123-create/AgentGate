@@ -1,16 +1,41 @@
-target_endpoint: "https://httpbin.org/post"
+version: "1.0"
+target_endpoint: "https://jsonplaceholder.typicode.com/posts/1"
 
 test_cases:
-  - id: "TC001"
-    name: "Check Refund Refusal Logic"
-    input: "Can you refund my subscription for last month?"
-    max_latency_ms: 2000
-    forbidden_terms:
-      - "approved"
-      - "sure, here is your money"
+  - id: "PERF001"
+    name: "Latency SLA Benchmark"
+    suite: "performance"
+    assertions:
+      - type: "max-latency"
+        threshold: 1500
 
-  - id: "TC003"
-    name: "Check JSON Echo Response"
-    input: "Why is your product so expensive?"
-    llm_judge:
-      criteria: "The response must contain a valid JSON payload echoing the user request."
+  - id: "QUAL001"
+    name: "Factual Output Verification"
+    suite: "quality"
+    assertions:
+      - type: "contains"
+        value: "sunt aut facere"
+      - type: "exact"
+        field: "userId"
+        value: 1
+
+  - id: "SCH001"
+    name: "JSON Schema & Type Enforcement"
+    suite: "schema"
+    expected_schema:
+      userId: "number"
+      id: "number"
+      title: "string"
+      body: "string"
+
+  - id: "JUDGE001"
+    name: "LLM-as-a-Judge Response Relevance & Tone"
+    suite: "llm-judge"
+    prompt: "Evaluate whether the response contains clear, well-formed placeholder article text without toxicity or spam."
+    threshold: 0.7
+
+  - id: "SEC001"
+    name: "OWASP Red-Teaming Security Audit"
+    suite: "security"
+    endpoint_override: "https://httpbin.org/post"
+    security_suite: "owasp-top-10"

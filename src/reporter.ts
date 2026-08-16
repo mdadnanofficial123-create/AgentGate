@@ -1,60 +1,34 @@
 import * as github from '@actions/github';
-import * as core from '@actions/core';
 import type { TestRunReport } from './runner.js';
 
-export async function postPRComment(
-  results: TestRunReport[],
-  token: string
-): Promise<void> {
+export async function postPRComment(report: TestRunReport): Promise<void> {
+  const token = process.env.GITHUB_TOKEN || process.env.INPUT_GITHUB_TOKEN;
+  if (!token) return;
+
   const context = github.context;
+  if (context.eventName !== 'pull_request') return;
 
-  // Only run if triggered by a Pull Request
-  if (!context.payload.pull_request) {
-    core.info('Not a pull request execution. Skipping PR comment posting.');
-    return;
-  }
+  const prNumber = context.payload.pull_request?.number;
+  if (!prNumber) return;
 
-  const prNumber = context.payload.pull_request.number;
   const octokit = github.getOctokit(token);
 
-  let passedCount = 0;
-  let failedCount = 0;
+  let markdown = `## 🛡️ AgentGate Security & Evaluation Report\n\n`;
+  markdown += `**Status**: ${report.failedCount === 0 ? '✅ PASSED' : '❌ FAILED'}\n`;
+  markdown += `**Summary**: ${report.passedCount} passed, ${report.failedCount} failed (${report.totalDurationMs}ms)\n\n`;
 
-  let tableRows = results
-    .map((res) => {
-      if (res.passed) {
-        passedCount++;
-        return `| ✅ **PASS** | \`${res.testCase.id}\` | ${res.testCase.name} | ${res.latencyMs}ms | Passed |`;
-      } else {
-        failedCount++;
-        const failureDetails = res.failures.join('<br>');
-        return `| ❌ **FAIL** | \`${res.testCase.id}\` | ${res.testCase.name} | ${res.latencyMs}ms | ${failureDetails} |`;
-      }
-    })
-    .join('\n');
+  markdown += `| Test Case | Status | Duration | Failure Reason |\n`;
+  markdown += `| :--- | :---: | :---: | :--- |\n`;
 
-  const summaryHeader = failedCount > 0 ? '❌ **BUILD BLOCKED**' : '✅ **ALL TESTS PASSED**';
-
-  const commentBody = `### 🛡️ AgentGate Evaluation Report
-
-${summaryHeader}
-
-| Status | Test ID | Name | Latency | Details |
-| :---: | :--- | :--- | :---: | :--- |
-${tableRows}
-
----
-**Summary:** ${passedCount} Passed, ${failedCount} Failed
-*Powered by AgentGate Zero-Trust Guardrails*`;
-
-  try {
-    await octokit.rest.issues.createComment({
-      ...context.repo,
-      issue_number: prNumber,
-      body: commentBody,
-    });
-    core.info(`Successfully posted evaluation comment to PR #${prNumber}`);
-  } catch (err: any) {
-    core.warning(`Failed to post PR comment: ${err.message}`);
+  for (const res of report.results) {
+    const statusIcon = res.passed ? '✓ PASS' : '✗ FAIL';
+    const reason = res.failures.length > 0 ? res.failures.join('<br>') : 'None';
+    markdown += `| **${res.id}**: ${res.name} | ${statusIcon} | ${res.durationMs}ms | ${reason} |\n`;
   }
+
+  await octokit.rest.issues.createComment({
+    ...context.repo,
+    issue_number: prNumber,
+    body: markdown,
+  });
 }
