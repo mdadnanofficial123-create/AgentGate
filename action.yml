@@ -4,21 +4,24 @@ author: 'Mohammad Adnan'
 
 inputs:
   config-path:
-    description: 'Path to the evaluation configuration YAML file'
+    description: 'Path to evaluation YAML'
     required: false
     default: 'eval.yaml'
   xai-api-key:
-    description: 'xAI / Grok API Key for LLM Judge evaluations'
+    description: 'xAI API Key'
     required: false
   github-token:
-    description: 'GitHub token for posting PR comments'
+    description: 'GitHub Token'
     required: false
     default: ${{ github.token }}
 
 runs:
-  using: 'node24'
-  main: 'dist/index.js'
-
-branding:
-  icon: 'shield'
-  color: 'blue'
+  using: 'composite'
+  steps:
+    - name: Run AgentGate CLI
+      shell: bash
+      env:
+        INPUT_CONFIG_PATH: ${{ inputs.config-path }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        XAI_API_KEY: ${{ inputs.xai-api-key }}
+      run: npx tsx src/index.ts run -c "${{ inputs.config-path }}"
