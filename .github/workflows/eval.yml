@@ -2,10 +2,10 @@ name: AgentGate AI Guardrail
 
 on:
   push:
-    branches: [ main ]  # Runs on direct pushes to main
+    branches: [ main ]
   pull_request:
-    branches: [ main ]  # Runs when a PR is opened/updated against main
-  workflow_dispatch:    # Allows manual trigger via GitHub UI
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   agentgate-eval:
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24' # Updated from 20 to 24
 
       - name: Install Dependencies
         run: npm ci
