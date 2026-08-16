@@ -29,7 +29,7 @@ async function runSingleTest(
     const latencyMs = Date.now() - startTime;
     const responseText = await response.text();
 
-    const evaluation = evaluateResponse(testCase, responseText, latencyMs);
+    const evaluation = await evaluateResponse(testCase, responseText, latencyMs);
 
     return {
       testCase,

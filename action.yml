@@ -1,0 +1,24 @@
+name: 'AgentGate CI Guardrail'
+description: 'Zero-trust evaluation and LLM-as-a-judge regression testing for AI agents.'
+author: 'Mohammad Adnan'
+
+inputs:
+  config-path:
+    description: 'Path to the evaluation configuration YAML file'
+    required: false
+    default: 'eval.yaml'
+  xai-api-key:
+    description: 'xAI / Grok API Key for LLM Judge evaluations'
+    required: false
+  github-token:
+    description: 'GitHub token for posting PR comments'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+
+branding:
+  icon: 'shield'
+  color: 'blue'

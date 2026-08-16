@@ -1,7 +1,10 @@
+import 'dotenv/config';
 import { Command } from 'commander';
 import { green, red, bold, yellow, dim } from 'colorette';
+import * as core from '@actions/core';
 import { parseConfig } from './parser.js';
 import { executeTestSuite } from './runner.js';
+import { postPRComment } from './reporter.js';
 
 const program = new Command();
 
@@ -16,8 +19,17 @@ program
   .option('-c, --config <path>', 'path to config file', 'eval.yaml')
   .action(async (options) => {
     try {
-      console.log(`\n${bold('[AgentGate]')} Loading evaluation suite: ${options.config}`);
-      const config = parseConfig(options.config);
+      // Support inputs passed via GitHub Action environment variables or local flags
+      const configPath = core.getInput('config-path') || options.config;
+      const ghToken = core.getInput('github-token') || process.env.GITHUB_TOKEN;
+      const xaiKey = core.getInput('xai-api-key') || process.env.XAI_API_KEY || process.env.GROQ_API_KEY;
+
+      if (xaiKey) {
+        process.env.XAI_API_KEY = xaiKey;
+      }
+
+      console.log(`\n${bold('[AgentGate]')} Loading evaluation suite: ${configPath}`);
+      const config = parseConfig(configPath);
 
       console.log(`${bold('[AgentGate]')} Executing ${config.test_cases.length} test(s) against ${dim(config.target_endpoint)}...\n`);
 
@@ -44,11 +56,18 @@ program
 
       console.log(`\n${bold('Test Summary:')} ${green(`${passedCount} passed`)}, ${failedCount > 0 ? red(`${failedCount} failed`) : '0 failed'}\n`);
 
+      // Post comment to PR if GitHub Token is present
+      if (ghToken) {
+        await postPRComment(results, ghToken);
+      }
+
       if (failedCount > 0) {
-        process.exitCode = 1; // Safely signals failure to CI without abruptly closing Windows I/O handles
+        core.setFailed(`AgentGate evaluation failed with ${failedCount} violation(s).`);
+        process.exitCode = 1;
       }
     } catch (err: any) {
       console.error(`\n${red('[AgentGate Error]:')} ${err.message}`);
+      core.setFailed(err.message);
       process.exitCode = 1;
     }
   });

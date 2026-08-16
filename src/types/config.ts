@@ -4,9 +4,13 @@ export const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
   input: z.string(),
-  expected_output: z.string().optional(),
-  forbidden_terms: z.array(z.string()).optional(),
   max_latency_ms: z.number().optional(),
+  forbidden_terms: z.array(z.string()).optional(),
+  // New Day 3 Field
+  llm_judge: z.object({
+    criteria: z.string(),
+    model: z.string().default('llama-3.3-70b-versatile')
+  }).optional(),
 });
 
 export const TestConfigSchema = z.object({
